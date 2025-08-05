@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - Inventory Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h1 class="display-5 text-success">🔐 Authentication</h1>
+                <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4>Login</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="loginUsername" value="user" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="loginPassword" value="user123" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">Login</button>
+                        </form>
+                        <div id="loginResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Register</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="registerUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="registerUsername" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="registerPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerRole" class="form-label">Role</label>
+                                <select class="form-control" id="registerRole" required>
+                                    <option value="USER">User</option>
+                                    <option value="ADMIN">Admin</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </form>
+                        <div id="registerResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h4>Users List</h4>
+                    </div>
+                    <div class="card-body">
+                        <button id="getUsersBtn" class="btn btn-info mb-3">Get All Users</button>
+                        <div id="usersResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('loginResult');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="alert alert-success">✅ Login successful!<br>Username: ${result.username}<br>Role: ${result.role}<br>User ID: ${result.userId}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${result.message || 'Login failed'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Register form
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const role = document.getElementById('registerRole').value;
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, role })
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('registerResult');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="alert alert-success">✅ Registration successful!<br>Username: ${result.username}<br>Role: ${result.role}<br>User ID: ${result.userId}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${result.message || 'Registration failed'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('registerResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Get users
+        document.getElementById('getUsersBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/auth/users');
+                const users = await response.json();
+                const resultDiv = document.getElementById('usersResult');
+                
+                if (response.ok) {
+                    let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>ID</th><th>Username</th><th>Role</th></tr></thead><tbody>';
+                    users.forEach(user => {
+                        html += `<tr><td>${user.id}</td><td>${user.username}</td><td>${user.role}</td></tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ Failed to get users</div>`;
+                }
+            } catch (error) {
+                document.getElementById('usersResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

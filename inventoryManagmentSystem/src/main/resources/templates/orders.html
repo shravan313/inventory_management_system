@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - Inventory Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h1 class="display-5 text-danger">📋 Orders Management</h1>
+                <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-danger text-white">
+                        <h4>Place Order</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="placeOrderForm">
+                            <div class="mb-3">
+                                <label for="orderUserId" class="form-label">User ID</label>
+                                <input type="number" class="form-control" id="orderUserId" value="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Place Order</button>
+                        </form>
+                        <div id="placeOrderResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Get User Orders</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="getUserOrdersForm">
+                            <div class="mb-3">
+                                <label for="getOrdersUserId" class="form-label">User ID</label>
+                                <input type="number" class="form-control" id="getOrdersUserId" value="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Get User Orders</button>
+                        </form>
+                        <div id="getUserOrdersResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4>Get All Orders (Admin)</h4>
+                    </div>
+                    <div class="card-body">
+                        <button id="getAllOrdersBtn" class="btn btn-success">Get All Orders</button>
+                        <div id="getAllOrdersResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h4>Get Order by ID</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="getOrderForm">
+                            <div class="mb-3">
+                                <label for="getOrderId" class="form-label">Order ID</label>
+                                <input type="number" class="form-control" id="getOrderId" required>
+                            </div>
+                            <button type="submit" class="btn btn-info">Get Order</button>
+                        </form>
+                        <div id="getOrderResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Place order
+        document.getElementById('placeOrderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('orderUserId').value;
+            
+            try {
+                const response = await fetch(`/api/user/orders?userId=${userId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('placeOrderResult');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="alert alert-success">✅ Order placed successfully!<br>Order ID: ${result.id}<br>Total Amount: $${result.totalAmount}<br>Items: ${result.items ? result.items.length : 0}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${result || 'Failed to place order - cart may be empty'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('placeOrderResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Get user orders
+        document.getElementById('getUserOrdersForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('getOrdersUserId').value;
+            
+            try {
+                const response = await fetch(`/api/user/orders?userId=${userId}`);
+                const orders = await response.json();
+                const resultDiv = document.getElementById('getUserOrdersResult');
+                
+                if (response.ok) {
+                    if (orders.length === 0) {
+                        resultDiv.innerHTML = `<div class="alert alert-info">📋 No orders found for this user</div>`;
+                    } else {
+                        let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Order ID</th><th>Total Amount</th><th>Items Count</th></tr></thead><tbody>';
+                        orders.forEach(order => {
+                            html += `<tr><td>${order.id}</td><td>$${order.totalAmount}</td><td>${order.items ? order.items.length : 0}</td></tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                        resultDiv.innerHTML = html;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ Failed to get user orders</div>`;
+                }
+            } catch (error) {
+                document.getElementById('getUserOrdersResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Get all orders
+        document.getElementById('getAllOrdersBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/admin/orders');
+                const orders = await response.json();
+                const resultDiv = document.getElementById('getAllOrdersResult');
+                
+                if (response.ok) {
+                    if (orders.length === 0) {
+                        resultDiv.innerHTML = `<div class="alert alert-info">📋 No orders found</div>`;
+                    } else {
+                        let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Order ID</th><th>User ID</th><th>Total Amount</th><th>Items Count</th></tr></thead><tbody>';
+                        orders.forEach(order => {
+                            html += `<tr><td>${order.id}</td><td>${order.userId}</td><td>$${order.totalAmount}</td><td>${order.items ? order.items.length : 0}</td></tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                        resultDiv.innerHTML = html;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ Failed to get all orders</div>`;
+                }
+            } catch (error) {
+                document.getElementById('getAllOrdersResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Get order by ID
+        document.getElementById('getOrderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orderId = document.getElementById('getOrderId').value;
+            
+            try {
+                const response = await fetch(`/api/user/orders/${orderId}`);
+                const order = await response.json();
+                const resultDiv = document.getElementById('getOrderResult');
+                
+                if (response.ok) {
+                    let html = `<div class="alert alert-info">📋 Order Details:<br>Order ID: ${order.id}<br>User ID: ${order.userId}<br>Total Amount: $${order.totalAmount}`;
+                    if (order.items && order.items.length > 0) {
+                        html += '<br><br>Items:<br>';
+                        order.items.forEach(item => {
+                            html += `- Product ID: ${item.productId}, Quantity: ${item.quantity}, Price: $${item.price}<br>`;
+                        });
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ Order not found</div>`;
+                }
+            } catch (error) {
+                document.getElementById('getOrderResult').innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
